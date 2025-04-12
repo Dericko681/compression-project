@@ -24,12 +24,12 @@ jobs:
       - name: Build and Push js-compressor image
         working-directory: ./js-compressor
         run: |
-          docker build -t ghcr.io/${{ github.repository }}/js-compressor:latest .
-          docker push ghcr.io/${{ github.repository }}/js-compressor:latest
+          docker build -t ghcr.io/${{ vars.REPOSITORY }}/js-compressor:latest .
+          docker push ghcr.io/${{ vars.REPOSITORY }}/js-compressor:latest
 
       # Build and push rs-compressor image
       - name: Build and Push rs-compressor image
         working-directory: ./rs-compressor
         run: |
-          docker build -t ghcr.io/${{ github.repository }}/rs-compressor:latest .
-          docker push ghcr.io/${{ github.repository }}/rs-compressor:latest
+          docker build -t ghcr.io/${{ vars.REPOSITORY }}/rs-compressor:latest .
+          docker push ghcr.io/${{ vars.REPOSITORY }}/rs-compressor:latest
