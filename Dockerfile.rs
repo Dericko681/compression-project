@@ -3,17 +3,23 @@ FROM rust:1.70-slim AS builder
 
 WORKDIR /app
 
-# Copy dependency files first for caching
+# Copy just the Cargo files first
 COPY rust-compressor/Cargo.toml rust-compressor/Cargo.lock ./
 
-# Download and cache dependencies without building
-RUN cargo fetch
+# Create minimal source structure needed for initial build
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    echo "pub fn lib_func() {}" > src/lib.rs
 
-# Copy the real source code
+# Cache dependencies by doing an initial build
+RUN cargo build --release
+
+# Now copy the real source files (this will invalidate cache when sources change)
 COPY rust-compressor/src ./src
 
-# Build the actual project (dependencies are cached from previous step)
-RUN cargo build --release
+# Touch Cargo.toml to ensure rebuild if needed
+RUN touch Cargo.toml && \
+    cargo build --release
 
 # Stage 2: Create minimal runtime image
 FROM debian:bookworm-slim
