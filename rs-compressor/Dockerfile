@@ -1,25 +1,39 @@
 # === Build stage ===
-FROM rust:1.76-alpine as builder
+FROM rust:1.78-slim as builder
 
 # Install build dependencies
-RUN apk add --no-cache musl-dev
+RUN apt-get update && apt-get install -y pkg-config libssl-dev build-essential curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Cache dependencies first
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir src && echo "fn main() {}" > src/main.rs \
-    && cargo build --release \
-    && rm -rf src
+# Install cargo-chef to optimize dependency builds
+RUN cargo install cargo-chef
 
-# Build actual project
-COPY src ./src
-RUN cargo build --release && strip target/release/rs-compressor
+COPY . .
+
+# Cache dependencies
+RUN cargo chef prepare --recipe-path recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Copy actual source code
+COPY . .
+
+# Build the project
+RUN cargo build --release
+
+# Strip debug symbols to reduce binary size
+RUN strip target/release/rs-compressor
 
 # === Runtime stage ===
-FROM alpine:latest
+FROM alpine:3.19
+
+# Install CA certificates
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
+
+# Copy the compiled binary
 COPY --from=builder /app/target/release/rs-compressor .
 
+# Run the binary
 ENTRYPOINT ["./rs-compressor"]

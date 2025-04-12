@@ -52,7 +52,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile.rs
+          file: /rs-compressor/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-rust.outputs.tags }}
           labels: ${{ steps.meta-rust.outputs.labels }}
@@ -100,7 +100,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile.js
+          file: /js-compressor/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-js.outputs.tags }}
           labels: ${{ steps.meta-js.outputs.labels }}
