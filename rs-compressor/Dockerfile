@@ -9,31 +9,34 @@ WORKDIR /app
 # Install cargo-chef to optimize dependency builds
 RUN cargo install cargo-chef
 
-COPY . .
+# Copy only the files needed for dependency resolution
+COPY Cargo.toml Cargo.lock ./
+COPY src/ ./src/
 
 # Cache dependencies
 RUN cargo chef prepare --recipe-path recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
-# Copy actual source code
-COPY . .
-
-# Build the project
+# Build the application
 RUN cargo build --release
 
-# Strip debug symbols to reduce binary size
-RUN strip target/release/rs-compressor
-
 # === Runtime stage ===
-FROM alpine:3.19
+FROM debian:bullseye-slim
 
-# Install CA certificates
-RUN apk add --no-cache ca-certificates
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --gid 1001 appuser
 
 WORKDIR /app
 
-# Copy the compiled binary
-COPY --from=builder /app/target/release/rs-compressor .
+# Copy the binary from the builder stage
+COPY --from=builder --chown=appuser:appgroup /app/target/release/rs-compressor /app/rs-compressor
 
-# Run the binary
-ENTRYPOINT ["./rs-compressor"]
+# Switch to non-root user
+USER appuser
+
+# Set the entrypoint
+ENTRYPOINT ["/app/rs-compressor"]

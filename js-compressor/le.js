@@ -2,10 +2,12 @@ function decode_utf8(s) {
   return decodeURIComponent(escape(s));
 }
 
-function compress(string) {
+function compress(input) {
+  // Convert Buffer to string if needed
+  const string = Buffer.isBuffer(input) ? input.toString('utf8') : input;
   let encoded = [];
   let count = 1;
-  string = decode_utf8(string);
+  
   for (let i = 0; i < string.length; i++) {
     if (string[i] === string[i + 1] && count < 9) {
       count++;
@@ -22,8 +24,11 @@ function compress(string) {
   return encoded.join("");
 }
 
-function decompress(string) {
+function decompress(input) {
+  // Convert Buffer to string if needed
+  const string = Buffer.isBuffer(input) ? input.toString('utf8') : input;
   let decoded = [];
+  
   for (let i = 0; i < string.length; i++) {
     if (isNaN(string[i]) && !isNaN(string[i + 1])) {
       for (let j = 0; j < string[i + 1]; j++) {
@@ -34,7 +39,8 @@ function decompress(string) {
       decoded.push(string[i]);
     }
   }
-  return decoded.join("");
+  
+  return Buffer.from(decoded.join(""), 'utf8');
 }
 
 module.exports = { compress, decompress };

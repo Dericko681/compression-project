@@ -7,19 +7,21 @@ class Lz77Token {
 }
 
 function compress(input) {
+    // Convert Buffer to string if needed
+    const inputStr = Buffer.isBuffer(input) ? input.toString('utf8') : input;
     const output = [];
     let pos = 0;
     const windowSize = 10; // Adjust window size as needed
 
-    while (pos < input.length) {
-        const [bestOffset, bestLength] = findLongestMatch(input, pos, windowSize);
+    while (pos < inputStr.length) {
+        const [bestOffset, bestLength] = findLongestMatch(inputStr, pos, windowSize);
         
         if (bestLength > 0) {
-            const nextChar = pos + bestLength < input.length ? input[pos + bestLength] : 0;
+            const nextChar = pos + bestLength < inputStr.length ? inputStr.charCodeAt(pos + bestLength) : 0;
             output.push(new Lz77Token(bestOffset, bestLength, nextChar));
             pos += bestLength + 1;
         } else {
-            output.push(new Lz77Token(0, 0, input[pos]));
+            output.push(new Lz77Token(0, 0, inputStr.charCodeAt(pos)));
             pos += 1;
         }
     }
@@ -67,6 +69,7 @@ function decompress(tokens) {
         }
     }
     
+    // Convert the array of character codes to a Buffer
     return Buffer.from(output);
 }
 

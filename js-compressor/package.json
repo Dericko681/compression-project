@@ -1,16 +1,21 @@
 {
   "name": "js-compressor",
   "version": "1.0.0",
-  "description": "",
-  "main": "le.js",
-  "type": "module",
+  "description": "A command-line compression tool supporting RLE and LZ77 algorithms",
+  "main": "cli.js",
+  "type": "commonjs",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compress": "node cli.js compress",
+    "decompress": "node cli.js decompress"
   },
-  "keywords": [],
+  "bin": {
+    "js-compressor": "./cli.js"
+  },
+  "keywords": ["compression", "rle", "lz77", "cli"],
   "author": "",
   "license": "ISC",
   "devDependencies": {

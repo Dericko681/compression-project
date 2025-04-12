@@ -1,11 +1,11 @@
 #[derive(Debug, PartialEq)]
-struct Lz77Token {
-    offset: usize,
-    length: usize,
-    next_char: u8,
+pub struct Lz77Token {
+    pub offset: usize,
+    pub length: usize,
+    pub next_char: u8,
 }
 
-fn lzCompress(input: &[u8]) -> Vec<Lz77Token> {
+pub fn lzCompress(input: &[u8]) -> Vec<Lz77Token> {
     let mut output = Vec::new();
     let mut pos = 0;
     let window_size = 10;
@@ -63,7 +63,7 @@ fn find_longest_match(input: &[u8], pos: usize, window_size: usize) -> (usize, u
     (best_offset, best_length)
 }
 
-fn lzDecompress(tokens: &[Lz77Token]) -> Vec<u8> {
+pub fn lzDecompress(tokens: &[Lz77Token]) -> Vec<u8> {
     let mut output = Vec::new();
     
     for token in tokens {
