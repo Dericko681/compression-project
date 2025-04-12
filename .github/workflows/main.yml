@@ -1,109 +1,35 @@
-name: Build and Push Docker Images
+name: Build and Deploy Docker Images to GHCR
 
 on:
   push:
-    branches: [ "master" ]
-    tags: [ "v*.*.*" ]
-  pull_request:
-    branches: [ "master" ]
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository }}
+    branches:
+      - master  # Trigger this workflow on push to the main branch
 
 jobs:
-  build-rust:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta-rust
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/rust-compressor
-          tags: |
-            type=ref,event=tag
-            type=ref,event=branch
-            type=sha,prefix=rust-
-          flavor: |
-            latest=false
+      # Build and push js-compressor image
+      - name: Build and Push js-compressor image
+        working-directory: ./js-compressor
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/js-compressor:latest .
+          docker push ghcr.io/${{ github.repository }}/js-compressor:latest
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push Rust image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: /rs-compressor/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta-rust.outputs.tags }}
-          labels: ${{ steps.meta-rust.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  build-js:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta-js
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/js-app
-          tags: |
-            type=ref,event=tag
-            type=ref,event=branch
-            type=sha,prefix=js-
-          flavor: |
-            latest=false
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push JS image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: /js-compressor/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta-js.outputs.tags }}
-          labels: ${{ steps.meta-js.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      # Build and push rs-compressor image
+      - name: Build and Push rs-compressor image
+        working-directory: ./rs-compressor
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/rs-compressor:latest .
+          docker push ghcr.io/${{ github.repository }}/rs-compressor:latest
