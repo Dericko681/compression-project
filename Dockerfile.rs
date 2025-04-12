@@ -5,12 +5,11 @@ WORKDIR /app
 # Copy Cargo files
 COPY rust-compressor/Cargo.toml rust-compressor/Cargo.lock ./
 
-# Dummy lib.rs to cache dependencies
-RUN mkdir src && echo "" > src/lib.rs
+# Dummy build to cache dependencies
+RUN mkdir src && echo "pub fn dummy() {}" > src/lib.rs && cargo build --release --lib
 
-RUN cargo build --release
-
-# Copy full source
+# Now copy the actual source code
 COPY rust-compressor/src ./src
 
-RUN cargo build --release --verbose
+# Build real library
+RUN cargo build --release --verbose --lib
