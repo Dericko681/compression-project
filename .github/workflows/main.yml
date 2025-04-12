@@ -3,7 +3,7 @@ name: build and deploy rust-compressor to ghcr
 on:
   push:
     branches:
-      - main 
+      - master
   
 
 jobs:
@@ -43,11 +43,10 @@ jobs:
         env:
          DSLIM_HTTP_PROBE: "false"  # Disables HTTP probing during slimming
         with:
-         target: ghcr.io/${{ vars.REPOSITORY }}/some_static_site  # Target image to slim
+         target: ghcr.io/${{ vars.REPOSITORY }}/some_static_site 
            # Suffix for the slimmed image tag
 
     # Step 5: Push the slimmed image to GitHub Container Registry.
       - name: Push slimmed Docker image
         run: |
-         docker push ghcr.io/${{ vars.REPOSITORY }}/some_static_site  ls
-         
+         docker push ghcr.io/${{ vars.REPOSITORY }}/some_static_site  
