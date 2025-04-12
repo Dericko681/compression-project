@@ -49,4 +49,5 @@ jobs:
     # Step 5: Push the slimmed image to GitHub Container Registry.
       - name: Push slimmed Docker image
         run: |
-         docker push ghcr.io/${{ vars.REPOSITORY }}/some_static_site  
+         docker push ghcr.io/${{ vars.REPOSITORY }}/some_static_site  ls
+         
