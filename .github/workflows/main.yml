@@ -3,7 +3,7 @@ name: build and deploy rust-compressor to ghcr
 on:
   push:
     branches:
-      - main 
+      - master 
   
 
 jobs:
