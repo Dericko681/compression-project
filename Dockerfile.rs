@@ -1,22 +1,24 @@
-# Stage 1: Build Rust application
+# Stage 1: Build Rust library
 FROM --platform=$BUILDPLATFORM rust:1.70-slim AS builder
 
 WORKDIR /app
 
 # Cache cargo dependencies
-COPY rust-app/Cargo.toml rust-app/Cargo.lock ./
+COPY rust-compressor/Cargo.toml rust-compressor/Cargo.lock ./
+# Create dummy lib.rs to satisfy initial build
 RUN mkdir -p src && \
-    echo "fn main() {}" > src/main.rs && \
+    echo "// dummy file" > src/lib.rs && \
+    cargo build --release && \
+    rm -rf src
+
+# Copy real source files
+COPY rust-compressor/src ./src
+# Touch build files to trigger rebuild
+RUN touch src/lib.rs && \
     cargo build --release
 
-# Copy source and build
-COPY rust-app/src ./src
-RUN touch src/main.rs && \
-    cargo build --release && \
-    strip target/release/rust-app
-
-# Stage 2: Runtime image
-FROM debian:bookworm-slim
+# Stage 2: Runtime image (if needed for tests/benchmarks)
+FROM debian:bookworm-slim AS runtime
 
 WORKDIR /app
 
@@ -25,16 +27,12 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy built binary
-COPY --from=builder /app/target/release/rust-app /app/rust-app
+# Copy built artifacts
+COPY --from=builder /app/target/release /usr/local/lib
 
 # Non-root user for security
-RUN useradd -m appuser && \
-    chown appuser:appuser /app
+RUN useradd -m appuser
 USER appuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD ["/app/rust-app", "--health"]
-
-ENTRYPOINT ["/app/rust-app"]
+# Set up environment variables if needed
+ENV LD_LIBRARY_PATH=/usr/local/lib
