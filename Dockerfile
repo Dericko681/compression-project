@@ -1,33 +1,30 @@
-# Stage 1: Build the Rust Application
-FROM rust:latest as builder
-
-WORKDIR /app
-
-# Copy the source code
-COPY . .
-
-# Build the application
+# Stage 1: Rust builder
+FROM rust:1.70 as rust-builder
+WORKDIR /usr/src/rust-compressor
+COPY rust-compressor .
 RUN cargo build --release
 
-# Stage 2: Create the Final Image
-FROM ubuntu:22.04
+# Stage 2: Node.js builder
+FROM node:18 as node-builder
+WORKDIR /usr/src/app
+COPY js-compressor/package.json js-compressor/package-lock.json ./js-compressor/
+WORKDIR /usr/src/app/js-compressor
+RUN npm ci --production
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Copy application files after npm install to leverage layer caching
+COPY js-compressor .
+RUN npm run build
 
-WORKDIR /app
+# Final stage
+FROM node:18-slim
+WORKDIR /usr/src/app
 
-# Copy the built binary
-COPY --from=builder /app/target/release/axum-server /usr/local/bin/axum-server
+# Copy built Rust binary
+COPY --from=rust-builder /usr/src/rust-compressor/target/release/lz_rust_compressor /usr/local/bin/
 
-COPY src/static /app/static
+# Copy built Node.js application
+COPY --from=node-builder /usr/src/app/js-compressor ./js-compressor
 
-RUN ls -la /app/static  # Debug: Check if files are copied correctly
-
-RUN chmod +x /usr/local/bin/axum-server
-
-EXPOSE 7777
-
-ENTRYPOINT ["/usr/local/bin/axum-server"]
+# Set up entry point
+WORKDIR /usr/src/app/js-compressor
+ENTRYPOINT ["node", "index.js"]
