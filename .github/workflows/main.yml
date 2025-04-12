@@ -62,7 +62,6 @@ jobs:
 
   build-js:
     runs-on: ubuntu-latest
-    needs: build-rust
     permissions:
       contents: read
       packages: write
