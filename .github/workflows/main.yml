@@ -52,7 +52,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile.rust
+          file: Dockerfile.rs
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-rust.outputs.tags }}
           labels: ${{ steps.meta-rust.outputs.labels }}
