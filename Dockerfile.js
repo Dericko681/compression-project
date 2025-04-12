@@ -4,7 +4,7 @@ FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
 WORKDIR /app
 
 # Cache dependencies
-COPY js-compressor/package.json js-app/package-lock.json ./
+COPY js-compressor/package.json js-compressor/package-lock.json ./
 RUN npm ci
 
 # Copy source and build
