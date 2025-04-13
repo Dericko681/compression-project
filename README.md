@@ -1,41 +1,74 @@
-![act-logo](https://raw.githubusercontent.com/wiki/nektos/act/img/logo-150.png)
+# Compression Algorithms Comparison
 
-# Overview [![push](https://github.com/nektos/act/workflows/push/badge.svg?branch=master&event=push)](https://github.com/nektos/act/actions) [![Join the chat at https://gitter.im/nektos/act](https://badges.gitter.im/nektos/act.svg)](https://gitter.im/nektos/act?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Go Report Card](https://goreportcard.com/badge/github.com/nektos/act)](https://goreportcard.com/report/github.com/nektos/act) [![awesome-runners](https://img.shields.io/badge/listed%20on-awesome--runners-blue.svg)](https://github.com/jonico/awesome-runners)
+This repo implements two compression algorithms (RLE and LZ) in both JavaScript and Rust, with a comparison script to benchmark their performance.
 
-> "Think globally, `act` locally"
+## Algorithms
 
-Run your [GitHub Actions](https://developer.github.com/actions/) locally! Why would you want to do this? Two reasons:
+### RLE (Run-Length Encoding)
+Simple compression that replaces repeated characters with a count. Good for files with lots of repeated data.
 
-- **Fast Feedback** - Rather than having to commit/push every time you want to test out the changes you are making to your `.github/workflows/` files (or for any changes to embedded GitHub actions), you can use `act` to run the actions locally. The [environment variables](https://help.github.com/en/actions/configuring-and-managing-workflows/using-environment-variables#default-environment-variables) and [filesystem](https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners#filesystems-on-github-hosted-runners) are all configured to match what GitHub provides.
-- **Local Task Runner** - I love [make](<https://en.wikipedia.org/wiki/Make_(software)>). However, I also hate repeating myself. With `act`, you can use the GitHub Actions defined in your `.github/workflows/` to replace your `Makefile`!
+### LZ (Lempel-Ziv)
+More complex algorithm that looks for repeated patterns. Better for general-purpose compression.
 
-> [!TIP]
-> **Now Manage and Run Act Directly From VS Code!**<br/>
-> Check out the [GitHub Local Actions](https://sanjulaganepola.github.io/github-local-actions-docs/) Visual Studio Code extension which allows you to leverage the power of `act` to run and test workflows locally without leaving your editor.
+## Usage
 
-# How Does It Work?
+You have two options:
 
-When you run `act` it reads in your GitHub Actions from `.github/workflows/` and determines the set of actions that need to be run. It uses the Docker API to either pull or build the necessary images, as defined in your workflow files and finally determines the execution path based on the dependencies that were defined. Once it has the execution path, it then uses the Docker API to run containers for each action based on the images prepared earlier. The [environment variables](https://help.github.com/en/actions/configuring-and-managing-workflows/using-environment-variables#default-environment-variables) and [filesystem](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#file-systems) are all configured to match what GitHub provides.
+### Option 1: Clone and Build
+```bash
+# Clone the repo
+git clone https://github.com/yourusername/compression-project.git
+cd compression-project
 
-Let's see it in action with a [sample repo](https://github.com/cplee/github-actions-demo)!
+# Build JS implementation
+cd js-compressor
+npm install
+cd ..
 
-![Demo](https://raw.githubusercontent.com/wiki/nektos/act/quickstart/act-quickstart-2.gif)
+# Build Rust implementation
+cd rs-compressor
+cargo build --release
+cd ..
 
-# Act User Guide
+# Run comparison
+./compare_compression.sh input.txt output
+```
 
-Please look at the [act user guide](https://nektosact.com) for more documentation.
+### Option 2: Use Docker Images
+```bash
+# Pull images
+docker pull ghcr.io/yourusername/js-compressor:latest
+docker pull ghcr.io/yourusername/rust-compressor:latest
 
-# Support
+# Run comparison
+./compare_compression.sh input.txt output
+```
 
-Need help? Ask on [Gitter](https://gitter.im/nektos/act)!
+The comparison script will:
+- Compress your file using all four combinations (JS/Rust × RLE/LZ)
+- Measure compression and decompression times
+- Show compressed file sizes
+- Generate a report in `compression_report.md`
 
-# Contributing
+## Direct Usage
 
-Want to contribute to act? Awesome! Check out the [contributing guidelines](CONTRIBUTING.md) to get involved.
+### JavaScript
+```bash
+# Compress
+node cli.js compress input.txt output.txt --rle  # or --lz
 
-## Manually building from source
+# Decompress
+node cli.js decompress output.txt decompressed.txt --rle  # or --lz
+```
 
-- Install Go tools 1.20+ - (<https://golang.org/doc/install>)
-- Clone this repo `git clone git@github.com:nektos/act.git`
-- Run unit tests with `make test`
-- Build and install: `make install`
+### Rust
+```bash
+# Compress
+cargo run -- compress input.txt output.txt --rle  # or --lz
+
+# Decompress
+cargo run -- decompress output.txt decompressed.txt --rle  # or --lz
+```
+
+## License
+MIT
