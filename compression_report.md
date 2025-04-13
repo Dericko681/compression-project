@@ -2,15 +2,18 @@
 
 ## Test Results
 
-| File | Size | JS Comp Time | RS Comp Time | JS Decomp Time | RS Decomp Time | JS Comp Size | RS Comp Size | JS Verify | RS Verify |
-|------|------|--------------|--------------|----------------|----------------|--------------|--------------|-----------|-----------|
-| test1.txt | 1.0M | .038279097 | 2.353836257 | .057914516 | .023704874 |  |  | ✗ | ✗ |
-| test2.txt | 24K | .036593208 | .021290618 | .038328256 | .021937292 |  |  | ✗ | ✗ |
-| test3.txt | 524K | .037591399 | .021831838 | .036490075 | .019965058 |  |  | ✗ | ✗ |
+| Algorithm | Implementation | Comp Time | Decomp Time | Comp Size | Verify |
+|-----------|----------------|-----------|-------------|-----------|--------|
+| rle | js | .045215213 | .038302056 | 4.0K | ✗ |
+| rle | rs | .022162878 | .021739981 | N/A | ✗ |
+| lz | js | .081754806 | .047950491 | 12K | ✓ |
+| lz | rs | .023403279 | .023048029 | N/A | ✗ |
 
 ## Summary
 
-This report compares the performance of JavaScript and Rust implementations of compression algorithms.
+This report compares the performance of different compression algorithms and implementations.
+- Algorithms: RLE (Run-Length Encoding) and LZ (Lempel-Ziv)
+- Implementations: JavaScript and Rust
 - Compression Time: Time taken to compress the input file
 - Decompression Time: Time taken to restore the original file
 - Compressed Size: Size of the compressed output file
