@@ -16,6 +16,8 @@ You have two options:
 
 ### Option 1: Clone and Build
 ```bash
+#fork the repository
+
 # Clone the repo
 git clone https://github.com/yourusername/compression-project.git
 cd compression-project
