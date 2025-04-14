@@ -1,76 +1,162 @@
-# Compression Algorithms Comparison
+# Compression Project
 
-This repo implements two compression algorithms (RLE and LZ) in both JavaScript and Rust, with a comparison script to benchmark their performance.
+A project implementing various compression algorithms in both Rust and JavaScript, with WebAssembly support.
 
-## Algorithms
+## Features
 
-### RLE (Run-Length Encoding)
-Simple compression that replaces repeated characters with a count. Good for files with lots of repeated data.
+- Run-Length Encoding (RLE) compression
+- LZ77 compression
+- Automatic algorithm selection based on file type
+- WebAssembly implementation for browser usage
+- Command-line interface for both Rust and JavaScript versions
+- Batch compression and decompression support
 
-### LZ (Lempel-Ziv)
-More complex algorithm that looks for repeated patterns. Better for general-purpose compression.
+## Prerequisites
+
+- Rust (for Rust implementation)
+- Node.js (for JavaScript implementation)
+- Python 3 (for local development server)
+- Modern web browser with WebAssembly support
+
+## Installation
+
+### Rust Implementation
+
+```bash
+cd rs-compressor
+cargo build --release
+```
+
+### JavaScript Implementation
+
+```bash
+cd js-compressor
+npm install
+```
+
+### WebAssembly Build
+
+To build the WebAssembly module:
+
+```bash
+# Navigate to the Rust project directory
+cd rs-compressor
+
+# Build for wasm32 target
+cargo build --target wasm32-unknown-unknown --release
+
+# Generate JavaScript bindings
+wasm-bindgen --target web --out-dir ../js-compressor/pkg target/wasm32-unknown-unknown/release/rs_compressor.wasm
+```
 
 ## Usage
 
-You have two options:
+### Command Line Interface
 
-### Option 1: Clone and Build
+#### Rust Implementation
+
 ```bash
-#fork the repository
+# Compress a file
+cargo run -- compress input.txt output.txt --auto
 
-# Clone the repo
-git clone https://github.com/yourusername/compression-project.git
-cd compression-project
+# Decompress a file
+cargo run -- decompress output.txt decompressed.txt --auto
 
-# Build JS implementation
+# Batch compress files
+cargo run -- compress-batch input_dir output_dir --auto
+
+# Batch decompress files
+cargo run -- decompress-batch input_dir output_dir --auto
+```
+
+#### JavaScript Implementation
+
+```bash
+# Compress a file
+node cli.js compress input.txt output.txt --auto
+
+# Decompress a file
+node cli.js decompress output.txt decompressed.txt --auto
+
+# Batch compress files
+node cli.js compress-batch input_dir output_dir --auto
+
+# Batch decompress files
+node cli.js decompress-batch input_dir output_dir --auto
+```
+
+### WebAssembly Demo
+
+To use the WebAssembly demo in your browser:
+
+1. Start a local web server:
+```bash
 cd js-compressor
-npm install
-cd ..
+python3 -m http.server 8000
+```
 
-# Build Rust implementation
+2. Open your browser and navigate to:
+```
+http://localhost:8000/wasm-demo.html
+```
+
+3. Use the web interface to:
+   - Select files for compression/decompression
+   - Choose compression algorithm (Auto, RLE, or LZ)
+   - View compression results and download processed files
+
+#### WebAssembly API
+
+The WebAssembly module can also be used programmatically in your JavaScript code:
+
+```javascript
+import init, { compress, compress_batch, decompress, decompress_batch, Algorithm } from './pkg/rs_compressor.js';
+
+// Initialize the WASM module
+const wasm = await init();
+
+// Compress a single file
+const result = await compress(fileData, Algorithm.Auto, filename);
+
+// Compress multiple files
+const batchResult = await compress_batch(files, Algorithm.Auto);
+
+// Decompress a file
+const decompressed = await decompress(compressedData, Algorithm.Auto);
+
+// Decompress multiple files
+const decompressedBatch = await decompress_batch(files, Algorithm.Auto);
+```
+
+Available algorithms:
+- `Algorithm.Auto`: Automatically selects the best algorithm
+- `Algorithm.RLE`: Uses Run-Length Encoding
+- `Algorithm.LZ`: Uses LZ77 compression
+
+## Development
+
+### Running Tests
+
+#### Rust Tests
+```bash
 cd rs-compressor
-cargo build --release
-cd ..
-
-# Run comparison
-./compare_compression.sh input.txt output
+cargo test
 ```
 
-### Option 2: Use Docker Images
+#### JavaScript Tests
 ```bash
-# Pull images
-docker pull ghcr.io/yourusername/js-compressor:latest
-docker pull ghcr.io/yourusername/rust-compressor:latest
-
-# Run comparison
-./compare_compression.sh input.txt output
+cd js-compressor
+npm test
 ```
 
-The comparison script will:
-- Compress your file using all four combinations (JS/Rust × RLE/LZ)
-- Measure compression and decompression times
-- Show compressed file sizes
-- Generate a report in `compression_report.md`
+### Building Documentation
 
-## Direct Usage
-
-### JavaScript
+#### Rust Documentation
 ```bash
-# Compress
-node cli.js compress input.txt output.txt --rle  # or --lz
-
-# Decompress
-node cli.js decompress output.txt decompressed.txt --rle  # or --lz
-```
-
-### Rust
-```bash
-# Compress
-cargo run -- compress input.txt output.txt --rle  # or --lz
-
-# Decompress
-cargo run -- decompress output.txt decompressed.txt --rle  # or --lz
+cd rs-compressor
+cargo doc --open
 ```
 
 ## License
-MIT
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
