@@ -31,3 +31,7 @@ USER appuser
 
 # Set the entrypoint to our CLI
 ENTRYPOINT ["node", "cli.js"]
+
+EXPOSE 8000
+
+CMD ["node", "cli.js"]
