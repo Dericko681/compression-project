@@ -3,44 +3,45 @@ function decode_utf8(s) {
 }
 
 function compress(input) {
-  // Convert Buffer to string if needed
-  const string = Buffer.isBuffer(input) ? input.toString('utf8') : input;
-  let encoded = [];
-  let count = 1;
+  // Handle both Buffer and string input
+  const data = Buffer.isBuffer(input) ? input : Buffer.from(input);
+  const output = [];
+  let i = 0;
   
-  for (let i = 0; i < string.length; i++) {
-    if (string[i] === string[i + 1] && count < 9) {
+  while (i < data.length) {
+    let count = 1;
+    const current = data[i];
+    
+    while (i + count < data.length && data[i + count] === current && count < 255) {
       count++;
-    } else {
-      if (count > 1) {
-        encoded.push(string[i] + count);
-        count = 1;
-      } else {
-        encoded.push(string[i]);
-      }
     }
+    
+    output.push(count);
+    output.push(current);
+    i += count;
   }
-
-  return encoded.join("");
+  
+  return Buffer.from(output);
 }
 
 function decompress(input) {
-  // Convert Buffer to string if needed
-  const string = Buffer.isBuffer(input) ? input.toString('utf8') : input;
-  let decoded = [];
+  // Handle both Buffer and string input
+  const data = Buffer.isBuffer(input) ? input : Buffer.from(input);
+  const output = [];
+  let i = 0;
   
-  for (let i = 0; i < string.length; i++) {
-    if (isNaN(string[i]) && !isNaN(string[i + 1])) {
-      for (let j = 0; j < string[i + 1]; j++) {
-        decoded.push(string[i]);
-      }
-      i = i + 1;
-    } else {
-      decoded.push(string[i]);
+  while (i + 1 < data.length) {
+    const count = data[i];
+    const byte = data[i + 1];
+    
+    for (let j = 0; j < count; j++) {
+      output.push(byte);
     }
+    
+    i += 2;
   }
   
-  return Buffer.from(decoded.join(""), 'utf8');
+  return Buffer.from(output);
 }
 
 module.exports = { compress, decompress };

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WASM Compression Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .file-input {
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+        .file-list {
+            margin-top: 10px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WASM Compression Demo</h1>
+        
+        <div class="file-input">
+            <input type="file" id="fileInput" multiple>
+            <div id="fileList" class="file-list"></div>
+        </div>
+
+        <div class="buttons">
+            <button id="compressAuto" onclick="compressFiles()" disabled>Compress All (Auto)</button>
+            <button id="compressRLE" onclick="compressFilesWithRLE()" disabled>Compress All (RLE)</button>
+            <button id="compressLZ" onclick="compressFilesWithLZ()" disabled>Compress All (LZ)</button>
+            <button id="decompress" onclick="decompressFiles()" disabled>Decompress All</button>
+        </div>
+
+        <div class="progress">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div id="status" class="status">
+            Initializing WebAssembly module...
+        </div>
+        <div id="error" class="error"></div>
+    </div>
+
+    <script type="module">
+        import { compressFiles, decompressFiles, Algorithm } from './wasm-demo.js';
+
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const status = document.getElementById('status');
+        const error = document.getElementById('error');
+        const progress = document.querySelector('.progress');
+        const progressBar = document.getElementById('progressBar');
+        const compressAuto = document.getElementById('compressAuto');
+        const compressRLE = document.getElementById('compressRLE');
+        const compressLZ = document.getElementById('compressLZ');
+        const decompress = document.getElementById('decompress');
+
+        // Initialize WebAssembly
+        try {
+            await import('./pkg/rs_compressor.js');
+            status.textContent = 'WebAssembly module loaded successfully. Select files to begin.';
+            enableButtons();
+        } catch (e) {
+            status.textContent = 'Failed to load WebAssembly module';
+            error.textContent = e.message;
+            console.error('WebAssembly initialization failed:', e);
+        }
+
+        function enableButtons() {
+            compressAuto.disabled = false;
+            compressRLE.disabled = false;
+            compressLZ.disabled = false;
+            decompress.disabled = false;
+        }
+
+        // Update file list display
+        fileInput.addEventListener('change', () => {
+            fileList.innerHTML = '';
+            Array.from(fileInput.files).forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `
+                    <span>${file.name}</span>
+                    <span>${(file.size / 1024).toFixed(2)} KB</span>
+                `;
+                fileList.appendChild(div);
+            });
+        });
+
+        async function updateProgress(current, total) {
+            const percent = (current / total) * 100;
+            progressBar.style.width = `${percent}%`;
+            status.textContent = `Processing ${current} of ${total} files...`;
+        }
+
+        window.compressFiles = async function() {
+            if (!fileInput.files.length) {
+                status.textContent = 'Please select files first';
+                return;
+            }
+
+            try {
+                progress.style.display = 'block';
+                progressBar.style.width = '0%';
+                status.textContent = 'Compressing files...';
+                error.textContent = '';
+
+                const results = await compressFiles(fileInput.files);
+                
+                const zip = new JSZip();
+                results.forEach(result => {
+                    zip.file(result.filename + '.compressed', result.data);
+                });
+
+                const content = await zip.generateAsync({type: 'blob'});
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'compressed_files.zip';
+                a.click();
+
+                status.textContent = 'Compression successful!';
+            } catch (error) {
+                status.textContent = 'Compression failed';
+                error.textContent = error.message;
+                console.error('Compression error:', error);
+            } finally {
+                progress.style.display = 'none';
+            }
+        };
+
+        window.compressFilesWithRLE = async function() {
+            if (!fileInput.files.length) {
+                status.textContent = 'Please select files first';
+                return;
+            }
+
+            try {
+                progress.style.display = 'block';
+                progressBar.style.width = '0%';
+                status.textContent = 'Compressing files with RLE...';
+                error.textContent = '';
+
+                const results = await compressFiles(fileInput.files, Algorithm.RLE);
+                
+                const zip = new JSZip();
+                results.forEach(result => {
+                    zip.file(result.filename + '.rle', result.data);
+                });
+
+                const content = await zip.generateAsync({type: 'blob'});
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'compressed_files_rle.zip';
+                a.click();
+
+                status.textContent = 'RLE Compression successful!';
+            } catch (error) {
+                status.textContent = 'RLE Compression failed';
+                error.textContent = error.message;
+                console.error('RLE Compression error:', error);
+            } finally {
+                progress.style.display = 'none';
+            }
+        };
+
+        window.compressFilesWithLZ = async function() {
+            if (!fileInput.files.length) {
+                status.textContent = 'Please select files first';
+                return;
+            }
+
+            try {
+                progress.style.display = 'block';
+                progressBar.style.width = '0%';
+                status.textContent = 'Compressing files with LZ...';
+                error.textContent = '';
+
+                const results = await compressFiles(fileInput.files, Algorithm.LZ);
+                
+                const zip = new JSZip();
+                results.forEach(result => {
+                    zip.file(result.filename + '.lz', result.data);
+                });
+
+                const content = await zip.generateAsync({type: 'blob'});
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'compressed_files_lz.zip';
+                a.click();
+
+                status.textContent = 'LZ Compression successful!';
+            } catch (error) {
+                status.textContent = 'LZ Compression failed';
+                error.textContent = error.message;
+                console.error('LZ Compression error:', error);
+            } finally {
+                progress.style.display = 'none';
+            }
+        };
+
+        window.decompressFiles = async function() {
+            if (!fileInput.files.length) {
+                status.textContent = 'Please select files first';
+                return;
+            }
+
+            try {
+                progress.style.display = 'block';
+                progressBar.style.width = '0%';
+                status.textContent = 'Decompressing files...';
+                error.textContent = '';
+
+                const results = await decompressFiles(fileInput.files);
+                
+                const zip = new JSZip();
+                results.forEach(result => {
+                    const originalName = result.name.replace(/\.(compressed|rle|lz)$/, '');
+                    zip.file(originalName, result.data);
+                });
+
+                const content = await zip.generateAsync({type: 'blob'});
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'decompressed_files.zip';
+                a.click();
+
+                status.textContent = 'Decompression successful!';
+            } catch (error) {
+                status.textContent = 'Decompression failed';
+                error.textContent = error.message;
+                console.error('Decompression error:', error);
+            } finally {
+                progress.style.display = 'none';
+            }
+        };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html> 
